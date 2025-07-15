@@ -15,6 +15,8 @@ import {
   TableRow,
   TablePagination,
   Container,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 import { motion } from "framer-motion";
 
@@ -32,10 +34,17 @@ interface LeaderboardEntry {
   points: number;
 }
 
+interface AdminDashboardResponse {
+  stats: AdminStats;
+  leaderboard: LeaderboardEntry[];
+  total?: number;
+}
+
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [total, setTotal] = useState(0);
@@ -43,18 +52,40 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const fetchAdminDashboard = async () => {
       try {
-        const response = await axios.get(`/epi/waitlist/admin/dashboard?page=${page + 1}&limit=${rowsPerPage}`);
-        setStats(response.data.stats);
-        setLeaderboard(response.data.leaderboard || []);
-        setTotal(response.data.total || 0);
+        setLoading(true);
         setError("");
+        
+        // Fixed: Changed from /epi/waitlist/admin/dashboard to /api/waitlist/admin/dashboard
+        // Note: Your backend route doesn't seem to support pagination parameters
+        // If you need pagination, you'll need to update your backend route
+        const response = await axios.get(`/api/waitlist/admin/dashboard`);
+        
+        const data: AdminDashboardResponse = response.data;
+        
+        setStats(data.stats);
+        setLeaderboard(data.leaderboard || []);
+        setTotal(data.total || data.leaderboard?.length || 0);
+        
       } catch (err: any) {
         console.error("Admin dashboard fetch error:", err.response?.data);
-        setError(err.response?.data?.message || "Failed to load admin dashboard");
+        
+        // Handle different error scenarios
+        if (err.response?.status === 401) {
+          setError("Unauthorized. Please login as admin.");
+        } else if (err.response?.status === 403) {
+          setError("Access denied. Admin privileges required.");
+        } else if (err.response?.status === 500) {
+          setError("Server error. Please try again later.");
+        } else {
+          setError(err.response?.data?.message || "Failed to load admin dashboard");
+        }
+      } finally {
+        setLoading(false);
       }
     };
+
     fetchAdminDashboard();
-  }, [page, rowsPerPage]);
+  }, []); // Removed pagination dependencies since backend doesn't support them
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -64,6 +95,27 @@ const AdminDashboard: React.FC = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  // Client-side pagination since backend doesn't support it
+  const paginatedLeaderboard = leaderboard.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ minHeight: "100vh", py: 4 }}>
+        <Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "200px" }}>
+            <CircularProgress />
+            <Typography variant="h6" sx={{ ml: 2 }}>
+              Loading admin dashboard...
+            </Typography>
+          </Box>
+        </Paper>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ minHeight: "100vh", py: 4 }}>
@@ -77,91 +129,153 @@ const AdminDashboard: React.FC = () => {
           <Typography variant="h5" component="h2" gutterBottom textAlign="center">
             Admin Dashboard
           </Typography>
+          
           {error && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-              <Box sx={{ mb: 2 }}>
-                <Typography color="error">{error}</Typography>
-              </Box>
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
             </motion.div>
           )}
+          
           {stats && (
             <>
               <Box sx={{ mb: 4 }}>
-                <Grid container spacing={2}>
+                <Typography variant="h6" gutterBottom>
+                  Overview Statistics
+                </Typography>
+                <Grid container spacing={3}>
                   <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: "primary.light", color: "white" }}>
-                      <CardContent>
-                        <Typography variant="h6">Total Waitlisted</Typography>
-                        <Typography variant="h4">{stats.totalWaitlisted}</Typography>
-                      </CardContent>
-                    </Card>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                    >
+                      <Card sx={{ bgcolor: "primary.main", color: "white" }}>
+                        <CardContent>
+                          <Typography variant="h6">Total Waitlisted</Typography>
+                          <Typography variant="h4">{stats.totalWaitlisted}</Typography>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   </Grid>
+                  
                   <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: "success.light", color: "white" }}>
-                      <CardContent>
-                        <Typography variant="h6">Verified Waitlisted</Typography>
-                        <Typography variant="h4">{stats.verifiedWaitlisted}</Typography>
-                      </CardContent>
-                    </Card>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.2 }}
+                    >
+                      <Card sx={{ bgcolor: "success.main", color: "white" }}>
+                        <CardContent>
+                          <Typography variant="h6">Verified Users</Typography>
+                          <Typography variant="h4">{stats.verifiedWaitlisted}</Typography>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   </Grid>
+                  
                   <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: "warning.light", color: "white" }}>
-                      <CardContent>
-                        <Typography variant="h6">Unverified Waitlisted</Typography>
-                        <Typography variant="h4">{stats.unverifiedWaitlisted}</Typography>
-                      </CardContent>
-                    </Card>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.3 }}
+                    >
+                      <Card sx={{ bgcolor: "warning.main", color: "white" }}>
+                        <CardContent>
+                          <Typography variant="h6">Unverified Users</Typography>
+                          <Typography variant="h4">{stats.unverifiedWaitlisted}</Typography>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   </Grid>
+                  
                   <Grid item xs={12} sm={6} md={3}>
-                    <Card sx={{ bgcolor: "info.light", color: "white" }}>
-                      <CardContent>
-                        <Typography variant="h6">Total Points Distributed</Typography>
-                        <Typography variant="h4">{stats.totalPoints}</Typography>
-                      </CardContent>
-                    </Card>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.4 }}
+                    >
+                      <Card sx={{ bgcolor: "info.main", color: "white" }}>
+                        <CardContent>
+                          <Typography variant="h6">Total Points</Typography>
+                          <Typography variant="h4">{stats.totalPoints}</Typography>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   </Grid>
                 </Grid>
               </Box>
+              
               <Box>
                 <Typography variant="h6" gutterBottom>
-                  Leaderboard
+                  Top Referrers Leaderboard
                 </Typography>
-                <TableContainer component={Paper}>
-                  <Table sx={{ minWidth: { xs: 300, sm: 650 } }} aria-label="leaderboard table">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Rank</TableCell>
-                        <TableCell>Referral Code</TableCell>
-                        <TableCell>Verified Referrals</TableCell>
-                        <TableCell>Points</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {leaderboard.map((entry, index) => (
-                        <motion.tr
-                          key={entry.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.1 }}
-                        >
-                          <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                          <TableCell>{entry.referralCode}</TableCell>
-                          <TableCell>{entry.verifiedReferrals}</TableCell>
-                          <TableCell>{entry.points}</TableCell>
-                        </motion.tr>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
-                    component="div"
-                    count={total}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                  />
-                </TableContainer>
+                
+                {leaderboard.length === 0 ? (
+                  <Typography variant="body1" sx={{ textAlign: "center", py: 4 }}>
+                    No leaderboard data available.
+                  </Typography>
+                ) : (
+                  <TableContainer component={Paper}>
+                    <Table sx={{ minWidth: { xs: 300, sm: 650 } }} aria-label="admin leaderboard table">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell><strong>Rank</strong></TableCell>
+                          <TableCell><strong>Referral Code</strong></TableCell>
+                          <TableCell><strong>Verified Referrals</strong></TableCell>
+                          <TableCell><strong>Points</strong></TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {paginatedLeaderboard.map((entry, index) => (
+                          <TableRow
+                            key={entry.id}
+                            component={motion.tr}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.1 }}
+                            sx={{ 
+                              '&:nth-of-type(odd)': { bgcolor: 'action.hover' },
+                              '&:hover': { bgcolor: 'action.selected' }
+                            }}
+                          >
+                            <TableCell>
+                              <Typography variant="body1" fontWeight="bold">
+                                {page * rowsPerPage + index + 1}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" fontFamily="monospace">
+                                {entry.referralCode}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body1">
+                                {entry.verifiedReferrals}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body1" fontWeight="bold" color="primary">
+                                {entry.points}
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    
+                    <TablePagination
+                      rowsPerPageOptions={[5, 10, 25]}
+                      component="div"
+                      count={leaderboard.length}
+                      rowsPerPage={rowsPerPage}
+                      page={page}
+                      onPageChange={handleChangePage}
+                      onRowsPerPageChange={handleChangeRowsPerPage}
+                    />
+                  </TableContainer>
+                )}
               </Box>
             </>
           )}

@@ -39,10 +39,18 @@ const Dashboard: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserStats = async () => {
       try {
+        setLoading(true);
+        // Ensure userId exists
+        if (!userId) {
+          setError("User ID is required");
+          return;
+        }
+        
         const statsRes = await axios.get(`/api/waitlist/user/${userId}`);
         setStats(statsRes.data);
       } catch (err: any) {
@@ -53,23 +61,49 @@ const Dashboard: React.FC = () => {
 
     const fetchLeaderboard = async () => {
       try {
+        // Ensure userId exists for leaderboard context
+        if (!userId) {
+          setError("User ID is required");
+          return;
+        }
+        
         const leaderboardRes = await axios.get(`/api/waitlist/leaderboard?userId=${userId}`);
         setLeaderboard(leaderboardRes.data.leaderboard || []);
       } catch (err: any) {
         console.error("Leaderboard fetch error:", err.response?.data);
         setError(err.response?.data?.message || "Failed to load leaderboard");
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchUserStats();
-    fetchLeaderboard();
+    if (userId) {
+      fetchUserStats();
+      fetchLeaderboard();
+    } else {
+      setError("User ID is required");
+      setLoading(false);
+    }
   }, [userId]);
 
-  const copyReferralLink = () => {
+  const copyReferralLink = async () => {
     if (stats?.referralLink) {
-      navigator.clipboard.write(stats.referralLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      try {
+        await navigator.clipboard.writeText(stats.referralLink); // Fixed: use writeText instead of write
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error("Failed to copy referral link:", err);
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = stats.referralLink;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     }
   };
 
@@ -81,6 +115,18 @@ const Dashboard: React.FC = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  if (loading) {
+    return (
+      <Container maxWidth="md" sx={{ minHeight: "100vh", py: 4 }}>
+        <Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 2 }}>
+          <Typography variant="h6" textAlign="center">
+            Loading...
+          </Typography>
+        </Paper>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="md" sx={{ minHeight: "100vh", py: 4 }}>
@@ -115,7 +161,12 @@ const Dashboard: React.FC = () => {
                 <Typography variant="body1">Verified Referrals: {stats.stats.verifiedReferrals}</Typography>
                 <Typography variant="body1">Points: {stats.stats.points}</Typography>
                 <Box sx={{ mt: 2 }}>
-                  <Typography variant="body1">Referral Link: {stats.referralLink}</Typography>
+                  <Typography variant="body1">
+                    Referral Link: 
+                    <Box component="span" sx={{ wordBreak: "break-all", ml: 1 }}>
+                      {stats.referralLink}
+                    </Box>
+                  </Typography>
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button
                       variant="contained"
@@ -132,52 +183,63 @@ const Dashboard: React.FC = () => {
                 <Typography variant="h6" gutterBottom>
                   Leaderboard
                 </Typography>
-                <TableContainer component={Paper}>
-                  <Table sx={{ minWidth: { xs: 300, sm: 650 } }} aria-label="leaderboard table">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Rank</TableCell>
-                        <TableCell>Email</TableCell>
-                        <TableCell>Verified Referrals</TableCell>
-                        <TableCell>Points</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {leaderboard
-                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                        .map((entry, index) => (
-                          <motion.tr
-                            key={entry.id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.3, delay: index * 0.1 }}
-                          >
-                            <TableCell sx={{ bgcolor: entry.id === stats.user.id ? "yellow" : "inherit" }}>
-                              {page * rowsPerPage + index + 1}
-                            </TableCell>
-                            <TableCell sx={{ bgcolor: entry.id === stats.user.id ? "yellow" : "inherit" }}>
-                              {entry.email}
-                            </TableCell>
-                            <TableCell sx={{ bgcolor: entry.id === stats.user.id ? "yellow" : "inherit" }}>
-                              {entry.verifiedReferrals}
-                            </TableCell>
-                            <TableCell sx={{ bgcolor: entry.id === stats.user.id ? "yellow" : "inherit" }}>
-                              {entry.points}
-                            </TableCell>
-                          </motion.tr>
-                        ))}
-                    </TableBody>
-                  </Table>
-                  <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
-                    component="div"
-                    count={leaderboard.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                  />
-                </TableContainer>
+                {leaderboard.length === 0 ? (
+                  <Typography variant="body1">No leaderboard data available.</Typography>
+                ) : (
+                  <TableContainer component={Paper}>
+                    <Table sx={{ minWidth: { xs: 300, sm: 650 } }} aria-label="leaderboard table">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Rank</TableCell>
+                          <TableCell>Email</TableCell>
+                          <TableCell>Verified Referrals</TableCell>
+                          <TableCell>Points</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {leaderboard
+                          .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                          .map((entry, index) => (
+                            <TableRow
+                              key={entry.id}
+                              component={motion.tr}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ duration: 0.3, delay: index * 0.1 }}
+                              sx={{ 
+                                bgcolor: entry.id === stats.user.id ? "rgba(255, 255, 0, 0.1)" : "inherit",
+                                '&:hover': {
+                                  bgcolor: entry.id === stats.user.id ? "rgba(255, 255, 0, 0.2)" : "rgba(0, 0, 0, 0.04)"
+                                }
+                              }}
+                            >
+                              <TableCell>
+                                {page * rowsPerPage + index + 1}
+                              </TableCell>
+                              <TableCell>
+                                {entry.email}
+                              </TableCell>
+                              <TableCell>
+                                {entry.verifiedReferrals}
+                              </TableCell>
+                              <TableCell>
+                                {entry.points}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                    <TablePagination
+                      rowsPerPageOptions={[5, 10, 25]}
+                      component="div"
+                      count={leaderboard.length}
+                      rowsPerPage={rowsPerPage}
+                      page={page}
+                      onPageChange={handleChangePage}
+                      onRowsPerPageChange={handleChangeRowsPerPage}
+                    />
+                  </TableContainer>
+                )}
               </Box>
             </>
           )}
