@@ -4,6 +4,9 @@ import { Link } from "react-router-dom";
 import { TextField, Button, Typography, Box, Alert, Container, Paper } from "@mui/material";
 import { motion } from "framer-motion";
 
+// Define the base URL for your backend
+const BASE_URL = "https://orangedynasty.global";
+
 const GetCode: React.FC = () => {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -29,8 +32,8 @@ const GetCode: React.FC = () => {
         return;
       }
 
-      // Make API call with proper query parameter
-      const response = await axios.get(`/epi/waitlist/code`, { 
+      // Make API call with proper query parameter and full URL
+      const response = await axios.get(`${BASE_URL}/epi/waitlist/code`, { 
         params: { email: email.trim() } 
       });
       
