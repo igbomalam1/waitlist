@@ -30,7 +30,7 @@ const GetCode: React.FC = () => {
       }
 
       // Make API call with proper query parameter
-      const response = await axios.get(`/api/waitlist/code`, { 
+      const response = await axios.get(`/epi/waitlist/code`, { 
         params: { email: email.trim() } 
       });
       
