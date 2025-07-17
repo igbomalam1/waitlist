@@ -55,10 +55,7 @@ const AdminDashboard: React.FC = () => {
         setLoading(true);
         setError("");
         
-        // Fixed: Changed from /epi/waitlist/admin/dashboard to /api/waitlist/admin/dashboard
-        // Note: Your backend route doesn't seem to support pagination parameters
-        // If you need pagination, you'll need to update your backend route
-        const response = await axios.get(`/api/waitlist/admin/dashboard`);
+        const response = await axios.get(`/epi/waitlist/admin/dashboard`);
         
         const data: AdminDashboardResponse = response.data;
         
