@@ -5,7 +5,7 @@ import { TextField, Button, Typography, Box, Alert, Container, Paper } from "@mu
 import { motion } from "framer-motion";
 
 // Define the base URL for your backend
-const BASE_URL = "https://orangedynasty.global";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://orangedynasty.global";
 
 const JoinWaitlist: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -56,7 +56,7 @@ const JoinWaitlist: React.FC = () => {
         setIsVerifying(true);
       }
     } catch (err: any) {
-      console.error("Join waitlist error:", err.response?.data);
+      console.error("Join waitlist error:", err.response?.status, err.response?.data, err.message);
       
       // Handle different error scenarios
       if (err.response?.status === 400) {
@@ -104,7 +104,7 @@ const JoinWaitlist: React.FC = () => {
         }
       }, 2000);
     } catch (err: any) {
-      console.error("Verify email error:", err.response?.data);
+      console.error("Verify email error:", err.response?.status, err.response?.data, err.message);
       
       // Handle different error scenarios
       if (err.response?.status === 400) {
@@ -144,10 +144,38 @@ const JoinWaitlist: React.FC = () => {
         transition={{ duration: 0.5 }}
         style={{ width: "100%" }}
       >
-        <Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 2 }}>
-          <Typography variant="h5" component="h2" gutterBottom textAlign="center">
-            {isVerifying ? "Verify Your Email" : "Join Waitlist"}
+        <Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 2, bgcolor: "background.paper" }}>
+          <Typography variant="h5" component="h2" gutterBottom textAlign="center" sx={{ fontWeight: "bold", color: "primary.main" }}>
+            {isVerifying ? "Verify Your Email" : "Join Our Testnet Waitlist"}
           </Typography>
+
+          {/* Testnet message */}
+          {!isVerifying && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+            >
+              <Box
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  borderRadius: 2,
+                  background: "linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)",
+                  color: "white",
+                  textAlign: "center",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                }}
+              >
+                <Typography variant="body1" sx={{ fontWeight: "medium" }}>
+                  This is a <strong>testnet waitlist</strong>, so no emails will be sent. To get your test code,{" "}
+                  <Link to="/get-code" style={{ color: "white", textDecoration: "underline", fontWeight: "bold" }}>
+                    click here to enter your email and get your code
+                  </Link>.
+                </Typography>
+              </Box>
+            </motion.div>
+          )}
 
           {/* Show referral code if present */}
           {referralCode && !isVerifying && (
@@ -187,6 +215,7 @@ const JoinWaitlist: React.FC = () => {
                 disabled={loadingJoin}
                 placeholder="Enter your email address"
                 autoComplete="email"
+                sx={{ bgcolor: "white", borderRadius: 1 }}
               />
               
               <motion.div whileHover={{ scale: loadingJoin ? 1 : 1.05 }} whileTap={{ scale: loadingJoin ? 1 : 0.95 }}>
@@ -196,19 +225,20 @@ const JoinWaitlist: React.FC = () => {
                   color="primary" 
                   fullWidth
                   disabled={loadingJoin || !email.trim()}
+                  sx={{ py: 1.5, fontWeight: "bold" }}
                 >
                   {loadingJoin ? "Joining..." : "Join Waitlist"}
                 </Button>
               </motion.div>
               
               <Typography variant="body2" sx={{ mt: 2, textAlign: "center" }}>
-                Already have an account? <Link to="/get-code" style={{ color: "primary.main" }}>Get your verification code</Link>
+                Already have an account? <Link to="/get-code" style={{ color: "primary.main", fontWeight: "bold" }}>Get your verification code</Link>
               </Typography>
             </Box>
           ) : (
             <Box component="form" onSubmit={handleVerify} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Typography variant="body2" sx={{ mb: 2, textAlign: "center", color: "text.secondary" }}>
-                We've sent a verification code to <strong>{email}</strong>
+                Enter the verification code for <strong>{email}</strong>
               </Typography>
               
               <TextField
@@ -222,6 +252,7 @@ const JoinWaitlist: React.FC = () => {
                 disabled={loadingVerify}
                 placeholder="Enter your verification code"
                 autoComplete="off"
+                sx={{ bgcolor: "white", borderRadius: 1 }}
               />
               
               <motion.div whileHover={{ scale: loadingVerify ? 1 : 1.05 }} whileTap={{ scale: loadingVerify ? 1 : 0.95 }}>
@@ -231,13 +262,14 @@ const JoinWaitlist: React.FC = () => {
                   color="primary" 
                   fullWidth
                   disabled={loadingVerify || !code.trim()}
+                  sx={{ py: 1.5, fontWeight: "bold" }}
                 >
                   {loadingVerify ? "Verifying..." : "Verify Email"}
                 </Button>
               </motion.div>
               
               <Typography variant="body2" sx={{ mt: 2, textAlign: "center" }}>
-                Didn't receive a code? <Link to="/get-code" style={{ color: "primary.main" }}>Resend verification code</Link>
+                Need a code? <Link to="/get-code" style={{ color: "primary.main", fontWeight: "bold" }}>Get verification code</Link>
               </Typography>
             </Box>
           )}
