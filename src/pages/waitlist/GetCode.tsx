@@ -5,7 +5,7 @@ import { TextField, Button, Typography, Box, Alert, Container, Paper } from "@mu
 import { motion } from "framer-motion";
 
 // Define the base URL for your backend
-const BASE_URL = "https://orangedynasty.global";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://orangedynasty.global";
 
 const GetCode: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -45,7 +45,7 @@ const GetCode: React.FC = () => {
         setError("Invalid response from server. Please try again.");
       }
     } catch (err: any) {
-      console.error("Get code error:", err.response?.data);
+      console.error("Get code error:", err.response?.status, err.response?.data, err.message);
       
       // Handle different error scenarios
       if (err.response?.status === 404) {
@@ -76,14 +76,33 @@ const GetCode: React.FC = () => {
         transition={{ duration: 0.5 }}
         style={{ width: "100%" }}
       >
-        <Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 2 }}>
-          <Typography variant="h5" component="h2" gutterBottom textAlign="center">
-            Get Verification Code
+        <Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, borderRadius: 2, bgcolor: "background.paper" }}>
+          <Typography variant="h5" component="h2" gutterBottom textAlign="center" sx={{ fontWeight: "bold", color: "primary.main" }}>
+            Get Your Verification Code
           </Typography>
-          
-          <Typography variant="body2" sx={{ mb: 3, textAlign: "center", color: "text.secondary" }}>
-            Enter your email address to retrieve your verification code
-          </Typography>
+
+          {/* Explanation message */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+          >
+            <Box
+              sx={{
+                mb: 3,
+                p: 2,
+                borderRadius: 2,
+                background: "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)",
+                color: "white",
+                textAlign: "center",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+              }}
+            >
+              <Typography variant="body1" sx={{ fontWeight: "medium" }}>
+                Enter your email below, and your <strong>verification code</strong> will display here.
+              </Typography>
+            </Box>
+          </motion.div>
 
           {error && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
@@ -113,6 +132,7 @@ const GetCode: React.FC = () => {
               disabled={loading}
               placeholder="Enter your email address"
               autoComplete="email"
+              sx={{ bgcolor: "white", borderRadius: 1 }}
             />
             
             <motion.div whileHover={{ scale: loading ? 1 : 1.05 }} whileTap={{ scale: loading ? 1 : 0.95 }}>
@@ -122,6 +142,7 @@ const GetCode: React.FC = () => {
                 color="primary" 
                 fullWidth
                 disabled={loading || !email.trim()}
+                sx={{ py: 1.5, fontWeight: "bold" }}
               >
                 {loading ? "Getting Code..." : "Get Code"}
               </Button>
@@ -142,13 +163,13 @@ const GetCode: React.FC = () => {
                   {code}
                 </Typography>
                 <Typography variant="body2" sx={{ color: "success.contrastText" }}>
-                  Use this code to verify your email address
+                  Use this code to verify your email on the waitlist page.
                 </Typography>
               </Box>
               
               <Box sx={{ mt: 2, textAlign: "center" }}>
                 <Typography variant="body2">
-                  Return to <Link to="/waitlist" style={{ color: "primary.main" }}>Join Waitlist</Link> to enter your code.
+                  Return to <Link to="/waitlist" style={{ color: "primary.main", fontWeight: "bold" }}>Join Waitlist</Link> to enter your code.
                 </Typography>
               </Box>
             </motion.div>
