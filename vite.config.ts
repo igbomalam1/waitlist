@@ -6,10 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": {
-        target: "http://localhost:5000",
+      "/epi": {
+        target: "https://orangedynasty.global",
         changeOrigin: true,
-        secure: false, // For local development
+        secure: true,
       },
     },
   },
