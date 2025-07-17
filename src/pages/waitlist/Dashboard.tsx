@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useParams } from "react-router-dom";
 import {
   Typography,
@@ -17,6 +16,10 @@ import {
   TablePagination,
 } from "@mui/material";
 import { motion } from "framer-motion";
+import axios from "axios";
+
+// Define the base URL for your backend
+const BASE_URL = "https://orangedynasty.global";
 
 interface UserStats {
   user: { id: number; email: string; referralCode: string; isVerified: boolean };
@@ -45,13 +48,12 @@ const Dashboard: React.FC = () => {
     const fetchUserStats = async () => {
       try {
         setLoading(true);
-        // Ensure userId exists
         if (!userId) {
           setError("User ID is required");
           return;
         }
-        
-        const statsRes = await axios.get(`/epi/waitlist/user/${userId}`);
+        // Use full URL instead of relative path
+        const statsRes = await axios.get(`${BASE_URL}/epi/waitlist/user/${userId}`);
         setStats(statsRes.data);
       } catch (err: any) {
         console.error("User stats fetch error:", err.response?.data);
@@ -61,13 +63,12 @@ const Dashboard: React.FC = () => {
 
     const fetchLeaderboard = async () => {
       try {
-        // Ensure userId exists for leaderboard context
         if (!userId) {
           setError("User ID is required");
           return;
         }
-        
-        const leaderboardRes = await axios.get(`/epi/waitlist/leaderboard?userId=${userId}`);
+        // Use full URL instead of relative path
+        const leaderboardRes = await axios.get(`${BASE_URL}/epi/waitlist/leaderboard?userId=${userId}`);
         setLeaderboard(leaderboardRes.data.leaderboard || []);
       } catch (err: any) {
         console.error("Leaderboard fetch error:", err.response?.data);
@@ -94,7 +95,6 @@ const Dashboard: React.FC = () => {
         setTimeout(() => setCopied(false), 2000);
       } catch (err) {
         console.error("Failed to copy referral link:", err);
-        // Fallback for older browsers
         const textArea = document.createElement("textarea");
         textArea.value = stats.referralLink;
         document.body.appendChild(textArea);
@@ -107,7 +107,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -206,25 +206,17 @@ const Dashboard: React.FC = () => {
                               initial={{ opacity: 0, x: -20 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ duration: 0.3, delay: index * 0.1 }}
-                              sx={{ 
+                              sx={{
                                 bgcolor: entry.id === stats.user.id ? "rgba(255, 255, 0, 0.1)" : "inherit",
                                 '&:hover': {
                                   bgcolor: entry.id === stats.user.id ? "rgba(255, 255, 0, 0.2)" : "rgba(0, 0, 0, 0.04)"
                                 }
                               }}
                             >
-                              <TableCell>
-                                {page * rowsPerPage + index + 1}
-                              </TableCell>
-                              <TableCell>
-                                {entry.email}
-                              </TableCell>
-                              <TableCell>
-                                {entry.verifiedReferrals}
-                              </TableCell>
-                              <TableCell>
-                                {entry.points}
-                              </TableCell>
+                              <TableCell>{page * rowsPerPage + index + 1}</TableCell>
+                              <TableCell>{entry.email}</TableCell>
+                              <TableCell>{entry.verifiedReferrals}</TableCell>
+                              <TableCell>{entry.points}</TableCell>
                             </TableRow>
                           ))}
                       </TableBody>
