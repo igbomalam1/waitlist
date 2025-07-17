@@ -4,6 +4,9 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { TextField, Button, Typography, Box, Alert, Container, Paper } from "@mui/material";
 import { motion } from "framer-motion";
 
+// Define the base URL for your backend
+const BASE_URL = "https://orangedynasty.global";
+
 const JoinWaitlist: React.FC = () => {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -34,7 +37,8 @@ const JoinWaitlist: React.FC = () => {
         return;
       }
 
-      const response = await axios.post("/epi/waitlist/join", { 
+      // Use full URL instead of relative path
+      const response = await axios.post(`${BASE_URL}/epi/waitlist/join`, { 
         email: email.trim(), 
         referralCode: referralCode.trim() 
       });
@@ -85,7 +89,8 @@ const JoinWaitlist: React.FC = () => {
         return;
       }
 
-      await axios.post("/epi/waitlist/verify", { 
+      // Use full URL instead of relative path
+      await axios.post(`${BASE_URL}/epi/waitlist/verify`, { 
         email: email.trim(), 
         code: code.trim() 
       });
