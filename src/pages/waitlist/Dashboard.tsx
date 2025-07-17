@@ -51,7 +51,7 @@ const Dashboard: React.FC = () => {
           return;
         }
         
-        const statsRes = await axios.get(`/api/waitlist/user/${userId}`);
+        const statsRes = await axios.get(`/epi/waitlist/user/${userId}`);
         setStats(statsRes.data);
       } catch (err: any) {
         console.error("User stats fetch error:", err.response?.data);
@@ -67,7 +67,7 @@ const Dashboard: React.FC = () => {
           return;
         }
         
-        const leaderboardRes = await axios.get(`/api/waitlist/leaderboard?userId=${userId}`);
+        const leaderboardRes = await axios.get(`/epi/waitlist/leaderboard?userId=${userId}`);
         setLeaderboard(leaderboardRes.data.leaderboard || []);
       } catch (err: any) {
         console.error("Leaderboard fetch error:", err.response?.data);
@@ -89,7 +89,7 @@ const Dashboard: React.FC = () => {
   const copyReferralLink = async () => {
     if (stats?.referralLink) {
       try {
-        await navigator.clipboard.writeText(stats.referralLink); // Fixed: use writeText instead of write
+        await navigator.clipboard.writeText(stats.referralLink);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (err) {
