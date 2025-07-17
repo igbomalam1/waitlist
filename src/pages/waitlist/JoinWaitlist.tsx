@@ -34,7 +34,7 @@ const JoinWaitlist: React.FC = () => {
         return;
       }
 
-      const response = await axios.post("/api/waitlist/join", { 
+      const response = await axios.post("/epi/waitlist/join", { 
         email: email.trim(), 
         referralCode: referralCode.trim() 
       });
@@ -85,7 +85,7 @@ const JoinWaitlist: React.FC = () => {
         return;
       }
 
-      await axios.post("/api/waitlist/verify", { 
+      await axios.post("/epi/waitlist/verify", { 
         email: email.trim(), 
         code: code.trim() 
       });
