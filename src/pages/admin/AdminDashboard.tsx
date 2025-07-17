@@ -4,7 +4,6 @@ import {
   Typography,
   Box,
   Paper,
-  Grid,
   Card,
   CardContent,
   Table,
@@ -19,6 +18,9 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { motion } from "framer-motion";
+
+// Define the base URL for your backend
+const BASE_URL = "https://orangedynasty.global";
 
 interface AdminStats {
   totalWaitlisted: number;
@@ -47,7 +49,6 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     const fetchAdminDashboard = async () => {
@@ -55,18 +56,16 @@ const AdminDashboard: React.FC = () => {
         setLoading(true);
         setError("");
         
-        const response = await axios.get(`/epi/waitlist/admin/dashboard`);
+        // Use full URL instead of relative path
+        const response = await axios.get(`${BASE_URL}/epi/waitlist/admin/dashboard`);
         
         const data: AdminDashboardResponse = response.data;
         
         setStats(data.stats);
         setLeaderboard(data.leaderboard || []);
-        setTotal(data.total || data.leaderboard?.length || 0);
-        
       } catch (err: any) {
         console.error("Admin dashboard fetch error:", err.response?.data);
         
-        // Handle different error scenarios
         if (err.response?.status === 401) {
           setError("Unauthorized. Please login as admin.");
         } else if (err.response?.status === 403) {
@@ -82,9 +81,9 @@ const AdminDashboard: React.FC = () => {
     };
 
     fetchAdminDashboard();
-  }, []); // Removed pagination dependencies since backend doesn't support them
+  }, []);
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -93,7 +92,6 @@ const AdminDashboard: React.FC = () => {
     setPage(0);
   };
 
-  // Client-side pagination since backend doesn't support it
   const paginatedLeaderboard = leaderboard.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
@@ -141,67 +139,71 @@ const AdminDashboard: React.FC = () => {
                 <Typography variant="h6" gutterBottom>
                   Overview Statistics
                 </Typography>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6} md={3}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 3,
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" } }}>
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: 0.1 }}
                     >
-                      <Card sx={{ bgcolor: "primary.main", color: "white" }}>
+                      <Card sx={{ bgcolor: "primary.main", color: "white", width: "100%" }}>
                         <CardContent>
                           <Typography variant="h6">Total Waitlisted</Typography>
                           <Typography variant="h4">{stats.totalWaitlisted}</Typography>
                         </CardContent>
                       </Card>
                     </motion.div>
-                  </Grid>
-                  
-                  <Grid item xs={12} sm={6} md={3}>
+                  </Box>
+                  <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" } }}>
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: 0.2 }}
                     >
-                      <Card sx={{ bgcolor: "success.main", color: "white" }}>
+                      <Card sx={{ bgcolor: "success.main", color: "white", width: "100%" }}>
                         <CardContent>
                           <Typography variant="h6">Verified Users</Typography>
                           <Typography variant="h4">{stats.verifiedWaitlisted}</Typography>
                         </CardContent>
                       </Card>
                     </motion.div>
-                  </Grid>
-                  
-                  <Grid item xs={12} sm={6} md={3}>
+                  </Box>
+                  <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" } }}>
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: 0.3 }}
                     >
-                      <Card sx={{ bgcolor: "warning.main", color: "white" }}>
+                      <Card sx={{ bgcolor: "warning.main", color: "white", width: "100%" }}>
                         <CardContent>
                           <Typography variant="h6">Unverified Users</Typography>
                           <Typography variant="h4">{stats.unverifiedWaitlisted}</Typography>
                         </CardContent>
                       </Card>
                     </motion.div>
-                  </Grid>
-                  
-                  <Grid item xs={12} sm={6} md={3}>
+                  </Box>
+                  <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" } }}>
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: 0.4 }}
                     >
-                      <Card sx={{ bgcolor: "info.main", color: "white" }}>
+                      <Card sx={{ bgcolor: "info.main", color: "white", width: "100%" }}>
                         <CardContent>
                           <Typography variant="h6">Total Points</Typography>
                           <Typography variant="h4">{stats.totalPoints}</Typography>
                         </CardContent>
                       </Card>
                     </motion.div>
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </Box>
               
               <Box>
@@ -261,7 +263,6 @@ const AdminDashboard: React.FC = () => {
                         ))}
                       </TableBody>
                     </Table>
-                    
                     <TablePagination
                       rowsPerPageOptions={[5, 10, 25]}
                       component="div"
